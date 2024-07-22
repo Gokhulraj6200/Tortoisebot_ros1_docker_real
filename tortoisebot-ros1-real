@@ -1,0 +1,67 @@
+# This Docker image will contain everything necessaary 
+# for starting all the real robot systems, including 
+# the camera and laser
+
+# Start from Ubuntu 20.04 base image
+# FROM ubuntu:20.04
+FROM ros:noetic-ros-core
+
+# set ros distribution
+ENV ROS_DISTRO noetic
+RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+RUN echo "PS1='${debian_chroot:+($debian_chroot)}\u@:\w$ '" >> /etc/bash.bashrc
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    git \
+    python3 \
+    python3-pip \
+    python3-catkin-tools \
+    python3-osrf-pycommon \
+    python3-rpi.gpio \
+    python3-rosdep \
+    python3-wstool \
+    ninja-build \
+    stow \
+    nano \
+    ros-noetic-catkin \
+    ros-noetic-camera-info-manager \
+    ros-noetic-compressed-image-transport \
+    ros-noetic-rqt-image-view \
+    libraspberrypi-bin \
+    libraspberrypi-dev \
+    ros-noetic-xacro \
+    ros-noetic-urdf \
+    ros-noetic-joint-state-publisher \
+    ros-noetic-robot-state-publisher \
+    ros-noetic-gmapping \
+    ros-noetic-rosbridge-server \
+    ros-noetic-web-video-server \
+    ros-noetic-tf2-web-republisher \
+    ros-noetic-amcl \
+    ros-noetic-map-server \
+    ros-noetic-move-base \
+    ros-noetic-navigation \
+    ros-noetic-slam-gmapping \
+    ros-noetic-dwa-local-planner \
+    ros-noetic-ira-laser-tools \
+    # ros-noetic-joint-state-publisher-gui \
+    ros-noetic-teleop-twist-keyboard
+
+# Create an overlay Catkin workspace
+RUN /bin/bash -c "source /opt/ros/noetic/setup.bash \
+    && mkdir -p /catkin_ws/src \
+    && cd /catkin_ws/src \
+    && catkin_init_workspace \
+    && git clone -b noetic https://github.com/rigbetellabs/tortoisebot.git"
+# Build the workspace
+RUN /bin/bash -c "source /opt/ros/noetic/setup.bash \
+    && cd /catkin_ws \
+    # && catkin build -j1 \
+    && catkin_make \
+    && source /catkin_ws/devel/setup.bash \
+    && echo 'source /catkin_ws/devel/setup.bash' >> ~/.bashrc"
+
+# copy a launch file 'mapping.launch' for gmapping
+COPY /tortoisebot_slam/launch/gmapping.launch /catkin_ws/src/tortoisebot/tortoisebot_slam/launch/
+WORKDIR /catkin_ws

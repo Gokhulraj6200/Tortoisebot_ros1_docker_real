@@ -1,0 +1,94 @@
+# Create a Docker compose file to start up all the 
+# previous containers. This Docker Compose file will 
+# start the following systems:
+
+# - starting all the real robot systems
+# - starting the mapping system
+
+version: '3.7'
+services:
+    roscore_server:
+        hostname: roscore
+        # build:
+        #     context: .
+        #     dockerfile: tortoisebot-ros1-real
+        image: gokhulraj/gokhulraj-cp22:tortoisebot-ros1-real
+        container_name: roscore_ros1_container
+        environment:
+            - DISPLAY
+            - ROS_MASTER_URI=http://192.168.0.104:11311
+            - ROS_HOSTNAME=192.168.0.104
+            - ROS_IP=192.168.0.104
+        volumes:
+            - /dev:/dev
+            - /opt/vc:/opt/vc
+        command: /bin/bash -c "source /opt/ros/noetic/setup.bash && roscore"
+        network_mode: host
+        # networks:
+        #     - ros1-net-real
+
+    bringup_ros1_server:
+        hostname: bringup_ros1
+        # build:
+        #     context: .
+        #     dockerfile: tortoisebot-ros1-real
+        image: gokhulraj/gokhulraj-cp22:tortoisebot-ros1-real
+        container_name: bringup_ros1_container
+        environment:
+            - DISPLAY
+            - ROS_MASTER_URI=http://192.168.0.104:11311
+            - ROS_HOSTNAME=192.168.0.104
+            - ROS_IP=192.168.0.104
+        volumes:
+            - /dev:/dev
+            - /opt/vc:/opt/vc
+            - /tmp/.X11-unix:/tmp/.X11-unix
+        privileged: true
+        tty: true
+        network_mode: host
+        # networks:
+        #     - ros1-net-real
+        command: /bin/bash -c "sleep 2 && source /opt/ros/noetic/setup.bash && source /catkin_ws/devel/setup.bash && roslaunch tortoisebot_firmware bringup.launch"
+
+    slam_ros1_server:
+        hostname: slam_ros1
+        # build:
+        #     context: .
+        #     dockerfile: tortoisebot-ros1-real
+        image: gokhulraj/gokhulraj-cp22:tortoisebot-ros1-real
+        container_name: slam_ros1_container
+        environment:
+            - DISPLAY
+            - ROS_MASTER_URI=http://192.168.0.104:11311
+            - ROS_HOSTNAME=192.168.0.104
+            - ROS_IP=192.168.0.104
+        volumes:
+            - /dev:/dev
+            - /opt/vc:/opt/vc
+            - /tmp/.X11-unix:/tmp/.X11-unix
+        privileged: true
+        tty: true
+        network_mode: host
+        command: /bin/bash -c "sleep 10 && source /opt/ros/noetic/setup.bash && source /catkin_ws/devel/setup.bash && roslaunch tortoisebot_slam gmapping.launch"  
+        
+    rviz_server:
+        hostname: rviz
+        image: gokhulraj/gokhulraj-cp22:tortoisebot-ros1-real
+        container_name: rviz_container
+        environment:
+            - DISPLAY=${DISPLAY}
+            - ROS_MASTER_URI=http://192.168.0.104:11311
+            - ROS_HOSTNAME=192.168.0.104
+            - ROS_IP=192.168.0.104
+        volumes:
+            - /dev:/dev
+            - /opt/vc:/opt/vc
+            - /tmp/.X11-unix:/tmp/.X11-unix
+        privileged: true
+        tty: true
+        network_mode: host
+        command: /bin/bash -c "sleep 5 && source /opt/ros/noetic/setup.bash && source /catkin_ws/devel/setup.bash && roslaunch tortoisebot_slam view_sensors.launch"
+    
+
+# networks:
+#     ros1-net-real:
